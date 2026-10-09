@@ -85,7 +85,6 @@ h1 .sub1{display:block;font-family:var(--f-display);font-weight:400;font-size:cl
 .cell .big{font-family:var(--f-display);font-size:calc(var(--cell) * .38);line-height:1;color:var(--muted)}
 .cell.mal .big{color:var(--milk);text-shadow:0 0 12px var(--glow)}
 .cell.mal .lab{color:var(--milk)}
-.cell .mini{width:22px!important;height:22px!important}
 .c-amt svg{width:46%!important;height:46%!important}
 .c-op.plus .big{color:var(--milk);text-shadow:0 0 14px var(--purple),0 0 4px var(--purple)}
 .c-op.plus .lab{color:var(--purple)}
@@ -176,9 +175,7 @@ h1 .sub1{display:block;font-family:var(--f-display);font-weight:400;font-size:cl
 .table{display:grid;gap:6px}
 .row{display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:baseline;font-size:13px}
 .row .rl{font-family:var(--f-pixel);color:var(--lilac);font-size:12px;text-transform:uppercase;letter-spacing:.1em}
-.icons.inl{display:inline-flex;vertical-align:-4px;margin-right:2px}
 .row .op{font-family:var(--f-display);font-weight:400;color:var(--milk);font-size:15px}
-.row .icons{display:flex;gap:2px}
 .row svg{width:20px;height:20px}
 .row .v{font-family:var(--f-pixel);color:var(--lilac);font-variant-numeric:tabular-nums}
 h2{font-family:var(--f-display);font-weight:400;font-size:18px;margin:0;color:var(--milk)}
@@ -303,20 +300,21 @@ footer a{color:var(--lilac)}
   <footer>more of her at <a href="https://malice.love" target="_blank" rel="noopener">malice.love</a> · made with ♡ by MENHERA</footer>
 </main>
 
+<script src="shared.js"></script>
 <script>
 (function(){
   // Reel 1: amount (malice symbols carry the bigger amounts)
   const AMOUNTS=[
-    {icon:'ribbon',v:5,name:'ribbon',malice:false},
-    {icon:'star',  v:5,name:'sparkle',malice:false},
-    {icon:'pill',  v:10,name:'pill',malice:false},
-    {icon:'paw',   v:10,name:'paw',malice:true},
-    {icon:'crown', v:15,name:'crown',malice:true},
-    {icon:'heart', v:20,name:'M-heart',malice:true}
+    {icon:'ribbon',v:5,malice:false},
+    {icon:'star',  v:5,malice:false},
+    {icon:'pill',  v:10,malice:false},
+    {icon:'paw',   v:10,malice:true},
+    {icon:'crown', v:15,malice:true},
+    {icon:'heart', v:20,malice:true}
   ];
-  // Reel 2: multiplier (malice symbols mark the big ones)
+  // Reel 2: multiplier (×2 and up glow)
   const MULTS=[
-    {m:1},{m:1},{m:1},{m:2},{m:2,icon:'paw'},{m:3,icon:'heart'}
+    {m:1},{m:1},{m:1},{m:2},{m:2},{m:3}
   ];
   // Reel 3: + adds and respins, = totals
   const OPS=[{op:'+'},{op:'='},{op:'+'},{op:'+'},{op:'='},{op:'+'}];
@@ -333,7 +331,7 @@ footer a{color:var(--lilac)}
 
   function cellHTML(r,s){
     if(r===0) return '<div class="cell c-amt'+(s.malice?' mal':'')+'"><svg aria-hidden="true"><use href="#s-'+s.icon+'"/></svg><span class="lab">$'+s.v+'</span></div>';
-    if(r===1) return '<div class="cell c-mult'+(s.icon?' mal':'')+'">'+(s.icon?'<svg class="mini" aria-hidden="true"><use href="#s-'+s.icon+'"/></svg>':'')+'<span class="big">×'+s.m+'</span></div>';
+    if(r===1) return '<div class="cell c-mult'+(s.m>=2?' mal':'')+'"><span class="big">×'+s.m+'</span></div>';
     return '<div class="cell c-op '+(s.op==='+'?'plus':'eq')+'"><span class="big">'+s.op+'</span><span class="lab">'+(s.op==='+'?'respin':'total')+'</span></div>';
   }
 
@@ -376,7 +374,7 @@ footer a{color:var(--lilac)}
     }catch(e){}
   }
 
-  let busy=false,total=0,round=0,games=0,shown=0;
+  let busy=false,total=0,round=0,games=0;
 
   function clearFx(){
     cab.classList.remove('shake-1','shake-2','shake-3','shake-4','glowpulse','party');
@@ -389,9 +387,9 @@ footer a{color:var(--lilac)}
   function flash(){flashfx.classList.remove('on');void flashfx.offsetWidth;flashfx.classList.add('on');}
 
   function countUp(from,to){
-    if(reduce){amtEl.textContent='$'+to;shown=to;return;}
+    if(reduce){amtEl.textContent='$'+to;return;}
     const t0=performance.now(),d=Math.min(1200,400+(to-from)*35);
-    (function step(t){const p=Math.min(1,(t-t0)/d);const v=Math.round(from+(to-from)*(1-Math.pow(1-p,3)));amtEl.textContent='$'+v;if(p<1)requestAnimationFrame(step);else shown=to;})(t0);
+    (function step(t){const p=Math.min(1,(t-t0)/d);const v=Math.round(from+(to-from)*(1-Math.pow(1-p,3)));amtEl.textContent='$'+v;if(p<1)requestAnimationFrame(step);})(t0);
     amtEl.classList.remove('amtbump');void amtEl.offsetWidth;amtEl.classList.add('amtbump');
   }
 
@@ -431,7 +429,7 @@ footer a{color:var(--lilac)}
 
   function spin(){
     if(busy)return;
-    busy=true;total=0;round=0;shown=0;clearPops();
+    busy=true;total=0;round=0;clearPops();
     amtEl.textContent='$0';potEl.textContent='$0';
     lever.classList.add('pulled');setTimeout(()=>lever.classList.remove('pulled'),380);
     setControls();
@@ -440,7 +438,6 @@ footer a{color:var(--lilac)}
 
   function spinRound(){
     round++;clearFx();
-    const respinsLeft=MAX_RESPINS-(round-1);
     hint2.textContent=round===1?'reel 3 decides: + adds n respins, = totals':'respin '+(round-1)+' of '+MAX_RESPINS+' ~ pot so far $'+total;
     readout.textContent=round===1?'spinning... nyaaa~':'RESPIN '+(round-1)+'!! nyaa~';
     beep(320,0,.08,'square');beep(480,.06,.1,'square');
@@ -531,12 +528,11 @@ footer a{color:var(--lilac)}
     renderYours(v);
   }
   // ---- payouts (same method as MENHERA-ops/tip-wheel) ----
-  const PAYPAL_ID='GCA6LB3DXBTAU'; // merchant account ID, keeps the email out of the page
-  const PAYPAL_BIZ='https://paypal.biz/menheramalice';
+  const PAYPAL_BIZ=TipGames.PAYPAL_BIZ;
   const payLink=$('payLink'),payUrl=$('payUrl'),owed2=$('owed2');
   function updatePay(v){
     if(v>0){
-      const url='https://www.paypal.com/cgi-bin/webscr?'+new URLSearchParams({cmd:'_xclick',business:PAYPAL_ID,amount:String(v),currency_code:'USD',item_name:'Cosplay fund tip',no_shipping:'1'}).toString();
+      const url=TipGames.paypalUrl(v);
       payLink.href=url;payLink.textContent='tip $'+v+' with PayPal';payLink.classList.remove('off');payLink.removeAttribute('aria-disabled');
       payUrl.textContent=url;payUrl.hidden=false;owed2.textContent='$'+v;
     }else{
@@ -574,14 +570,5 @@ footer a{color:var(--lilac)}
 })();
 </script>
 
-<script>
-(function(){
-  function send(){ try{ parent.postMessage({type:"tipgames-height", h:document.documentElement.scrollHeight}, "*"); }catch(e){} }
-  window.addEventListener("load", send);
-  window.addEventListener("resize", send);
-  if(window.ResizeObserver){ new ResizeObserver(send).observe(document.body); }
-  else setInterval(send, 1000);
-})();
-</script>
 </body>
 </html>

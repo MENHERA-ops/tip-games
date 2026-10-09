@@ -107,7 +107,7 @@ h1 .sub1{display:block;font-family:var(--f-display);font-weight:400;font-size:cl
       </div>
       <div class="body">
         <h2>tip wheel</h2>
-        <p>one big spin, little ↻ slices that go again, and a daily limit you set urself.</p>
+        <p>one big spin, little ↻ slices that go again, and a pause button whenever u want.</p>
         <span class="play">play ♡</span>
       </div>
     </a>
@@ -116,14 +116,6 @@ h1 .sub1{display:block;font-family:var(--f-display);font-weight:400;font-size:cl
   <p class="fine">spinning never charges you. tips are always ur choice, via PayPal. · <a href="https://malice.love" target="_blank" rel="noopener">malice.love</a></p>
 </main>
 
-<script>
-(function(){
-  function send(){ try{ parent.postMessage({type:"tipgames-height", h:document.documentElement.scrollHeight}, "*"); }catch(e){} }
-  window.addEventListener("load", send);
-  window.addEventListener("resize", send);
-  if(window.ResizeObserver){ new ResizeObserver(send).observe(document.body); }
-  else setInterval(send, 1000);
-})();
-</script>
+<script src="shared.js"></script>
 </body>
 </html>

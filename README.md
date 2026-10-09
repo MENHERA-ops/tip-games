@@ -10,4 +10,6 @@ Live at https://menhera-ops.github.io/tip-games/ once GitHub Pages is enabled (S
 
 To embed in Carrd: add an Embed element (Code, Inline) and paste the contents of `carrd-embed.html`. The iframe resizes itself to fit whichever page is open.
 
-To change the PayPal account, edit `PAYPAL_ID` in both `slots.html` and `wheel.html`.
+To change the PayPal account, edit `PAYPAL_ID` in `shared.js`.
+
+Tests: `node --test`

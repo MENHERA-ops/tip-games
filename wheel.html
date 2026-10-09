@@ -17,8 +17,6 @@ body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}
   --muted:#b9b1bb;
   --pink:#A98DAB;
   --pink-soft:#F0ECF0;
-  --blood:#5A555E;
-  --ok:#A98DAB;
   --display:"Dela Gothic One","Arial Black",system-ui,sans-serif;
   --body:"M PLUS Rounded 1c",ui-rounded,system-ui,sans-serif;
   --mono:"DotGothic16",ui-monospace,monospace;
@@ -57,7 +55,6 @@ input:focus-visible{outline:2px solid var(--pink);outline-offset:1px}
 .log li{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);border-bottom:1px dashed var(--line);padding-bottom:4px;font-variant-numeric:tabular-nums}
 .log li b{color:var(--fg)}
 .note{font-size:.78rem;color:var(--muted);line-height:1.5}
-.paused{color:var(--ok);font-weight:700}
 .hub{cursor:pointer;user-select:none;-webkit-user-select:none}
 .picker{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .picker button{background:transparent;color:var(--pink-soft);padding:8px 14px;font-size:.9rem;font-variant-numeric:tabular-nums}
@@ -146,12 +143,9 @@ input[type=range]{width:100%;accent-color:var(--pink)}
   <p class="note">Spinning is free and never charges you. You only tip if you choose to pay through PayPal.</p>
 </div>
 
+<script src="shared.js"></script>
 <script>
 (function(){
-  // ---- PayPal business account that receives tips ----
-  const PAYPAL_ID = "GCA6LB3DXBTAU"; // merchant account ID, keeps the email out of the page
-  const PAYPAL_BIZ = "https://paypal.biz/menheramalice";
-
   // 12 slices; the 5 small ones (5/12, ~42% of the wheel) charge AND force a respin
   const SEGMENTS = [
     {label:"$5 ↻",   amt:5,  color:"#F0ECF0", text:"#010101", respin:true},
@@ -180,7 +174,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
   const $ = id => document.getElementById(id);
   const cv = $("wheel"), ctx = cv.getContext("2d");
   const N = SEGMENTS.length, ARC = Math.PI*2/N;
-  let rot = 0, spinning = false, hilite = -1, hiliteA = 0;
+  let rot = 0, spinning = false, respinPending = false, hilite = -1, hiliteA = 0;
 
   const store = {
     get(k,d){ try{ const v = localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
@@ -248,7 +242,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     $("mult").disabled = spinning;
     $("pause").checked = state.paused;
     $("spentTxt").textContent = `$${spent} today`;
-    $("spinBtn").disabled = spinning || state.paused;
+    $("spinBtn").disabled = spinning || respinPending || state.paused;
     $("spinBtn").textContent = state.paused ? "PAUSED" : "SPIN";
     const log = $("log"); log.innerHTML = "";
     if(!state.log.length){ log.innerHTML = "<li><span>No spins yet</span></li>"; }
@@ -260,7 +254,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     const owed = state.owed||0;
     $("payPanel").hidden = spinning || owed<=0;
     if(owed>0){
-      const url = "https://www.paypal.com/cgi-bin/webscr?" + new URLSearchParams({cmd:"_xclick", business:PAYPAL_ID, amount:String(owed), currency_code:"USD", item_name:"Cosplay fund tip", no_shipping:"1"}).toString();
+      const url = TipGames.paypalUrl(owed);
       $("owedTxt").textContent = "$"+owed;
       $("owedTxt2").textContent = "$"+owed;
       $("payLink").href = url;
@@ -285,7 +279,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     else line = LINES.high;
     state.spent += amt;
     state.owed = (state.owed||0) + amt;
-    if(amt>0) state.last = amt;
+    if(amt>0 && seg.amt!=="double") state.last = amt;
     const t = new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
     state.log.push({t, label: labelOf(seg), amt});
     $("result").innerHTML = `<b>${amt===0?"$0":"$"+amt}</b>${line}`;
@@ -296,7 +290,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
 
   function spin(forced){
     if(rollDay()){ $("hub").innerHTML = "tip<br>me ♡"; render(); }
-    if(spinning || state.paused) return;
+    if(spinning || respinPending || state.paused) return;
     // they already opened PayPal for the old total; start a new one
     if(state.paidClicked){ state.owed = 0; state.paidClicked = false; }
     if(!store.get("tipwheel_seen", false)){
@@ -323,7 +317,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
       else {
         spinning=false; wrap.classList.remove("spinning");
         const again = settle(target, Number.isInteger(forced)); render();
-        if(again){ $("spinBtn").disabled = true; $("spinBtn").textContent = "RESPIN…"; setTimeout(spin, 1100); }
+        if(again){ respinPending = true; render(); $("spinBtn").textContent = "RESPIN…"; setTimeout(()=>{ respinPending = false; spin(); render(); }, 1100); }
       }
     }
     requestAnimationFrame(step);
@@ -439,7 +433,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
   hub.addEventListener("click", ()=>{ const n=Date.now(); if(n-lastTap<350){ togglePicker(); lastTap=0; } else lastTap=n; });
   hub.addEventListener("keydown", e=>{ if(e.key==="Enter" || e.key===" "){ e.preventDefault(); togglePicker(); } });
   $("pause").addEventListener("change", e=>{ state.paused = e.target.checked; $("result").textContent = state.paused ? "Paused. Turn it back on whenever you like." : "Welcome back ♡"; render(); });
-  $("bizLink").href = PAYPAL_BIZ;
+  $("bizLink").href = TipGames.PAYPAL_BIZ;
   $("reset").addEventListener("click", ()=>{ state.spent=0; state.last=0; state.log=[]; state.owed=0; state.paidClicked=false; $("result").textContent="Fresh start. Spin away ♡"; $("hub").innerHTML="tip<br>me ♡"; render(); });
 
   draw(); render();
@@ -447,14 +441,5 @@ input[type=range]{width:100%;accent-color:var(--pink)}
 })();
 </script>
 
-<script>
-(function(){
-  function send(){ try{ parent.postMessage({type:"tipgames-height", h:document.documentElement.scrollHeight}, "*"); }catch(e){} }
-  window.addEventListener("load", send);
-  window.addEventListener("resize", send);
-  if(window.ResizeObserver){ new ResizeObserver(send).observe(document.body); }
-  else setInterval(send, 1000);
-})();
-</script>
 </body>
 </html>

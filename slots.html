@@ -85,7 +85,6 @@ h1 .sub1{display:block;font-family:var(--f-display);font-weight:400;font-size:cl
 .cell .big{font-family:var(--f-display);font-size:calc(var(--cell) * .38);line-height:1;color:var(--muted)}
 .cell.mal .big{color:var(--milk);text-shadow:0 0 12px var(--glow)}
 .cell.mal .lab{color:var(--milk)}
-.cell .mini{width:22px!important;height:22px!important}
 .c-amt svg{width:46%!important;height:46%!important}
 .c-op.plus .big{color:var(--milk);text-shadow:0 0 14px var(--purple),0 0 4px var(--purple)}
 .c-op.plus .lab{color:var(--purple)}
@@ -314,9 +313,9 @@ footer a{color:var(--lilac)}
     {icon:'crown', v:15,name:'crown',malice:true},
     {icon:'heart', v:20,name:'M-heart',malice:true}
   ];
-  // Reel 2: multiplier (malice symbols mark the big ones)
+  // Reel 2: multiplier (mal glow marks the big ones)
   const MULTS=[
-    {m:1},{m:1},{m:1},{m:2},{m:2,icon:'paw'},{m:3,icon:'heart'}
+    {m:1},{m:1},{m:1},{m:2},{m:2,mal:true},{m:3,mal:true}
   ];
   // Reel 3: + adds and respins, = totals
   const OPS=[{op:'+'},{op:'='},{op:'+'},{op:'+'},{op:'='},{op:'+'}];
@@ -333,7 +332,7 @@ footer a{color:var(--lilac)}
 
   function cellHTML(r,s){
     if(r===0) return '<div class="cell c-amt'+(s.malice?' mal':'')+'"><svg aria-hidden="true"><use href="#s-'+s.icon+'"/></svg><span class="lab">$'+s.v+'</span></div>';
-    if(r===1) return '<div class="cell c-mult'+(s.icon?' mal':'')+'">'+(s.icon?'<svg class="mini" aria-hidden="true"><use href="#s-'+s.icon+'"/></svg>':'')+'<span class="big">×'+s.m+'</span></div>';
+    if(r===1) return '<div class="cell c-mult'+(s.mal?' mal':'')+'"><span class="big">×'+s.m+'</span></div>';
     return '<div class="cell c-op '+(s.op==='+'?'plus':'eq')+'"><span class="big">'+s.op+'</span><span class="lab">'+(s.op==='+'?'respin':'total')+'</span></div>';
   }
 

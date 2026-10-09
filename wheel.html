@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MALICE Tip Wheel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@400;700;800&family=DotGothic16&display=swap">
+<style>
+body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: one-column phone-first "app screen" — wheel as hero, cap meter + log below. Single committed look: jirai pink-on-black. */
+:root{
+  --bg:#010101;
+  --panel:#161216;
+  --line:#322837;
+  --fg:#F0ECF0;
+  --muted:#b9b1bb;
+  --pink:#A98DAB;
+  --pink-soft:#F0ECF0;
+  --blood:#5A555E;
+  --ok:#A98DAB;
+  --display:"Dela Gothic One","Arial Black",system-ui,sans-serif;
+  --body:"M PLUS Rounded 1c",ui-rounded,system-ui,sans-serif;
+  --mono:"DotGothic16",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);padding-inline:16px;padding-block:20px 40px;
+  background-image:radial-gradient(circle at 50% -10%, #322837 0%, transparent 55%);}
+.app{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+h1{font-family:var(--display);font-weight:400;font-size:1.7rem;margin:0;letter-spacing:.02em;text-wrap:balance}
+h1 span{color:var(--pink)}
+.tag{font-family:var(--mono);font-size:.75rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.wheelwrap{position:relative;width:100%;max-width:560px;aspect-ratio:1;margin:0 auto}
+canvas{width:100%;height:100%;display:block}
+.pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;
+  border-left:14px solid transparent;border-right:14px solid transparent;border-top:26px solid var(--pink);filter:drop-shadow(0 2px 4px #000)}
+.hub{position:absolute;inset:0;margin:auto;width:24%;height:24%;border-radius:50%;background:var(--bg);border:3px solid var(--pink);
+  display:grid;place-items:center;font-family:var(--display);font-size:clamp(.8rem,3.4vw,1rem);color:var(--pink-soft);text-align:center;line-height:1.1}
+button{font-family:var(--body);font-weight:800;cursor:pointer;border-radius:999px;border:2px solid var(--pink);transition:transform .1s, background .2s}
+button:focus-visible{outline:3px solid var(--pink-soft);outline-offset:3px}
+button:active{transform:scale(.97)}
+.spin{background:var(--pink);color:#010101;font-size:1.15rem;padding:14px 20px;width:100%;font-family:var(--display);font-weight:400;letter-spacing:.06em}
+.spin:disabled{background:var(--line);border-color:var(--line);color:var(--muted);cursor:not-allowed}
+.ghost{background:transparent;color:var(--pink-soft);padding:8px 14px;font-size:.85rem}
+.result{min-height:3.4em;text-align:center;font-size:1.05rem}
+.result b{font-family:var(--display);font-weight:400;color:var(--pink);font-size:1.6rem;display:block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.label{font-family:var(--mono);font-size:.78rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.meter{height:12px;background:var(--bg);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pink),var(--blood));transition:width .6s}
+.nums{font-variant-numeric:tabular-nums;font-weight:700}
+input[type=number]{width:6.5em;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-variant-numeric:tabular-nums}
+input:focus-visible{outline:2px solid var(--pink);outline-offset:1px}
+.switch{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:180px;overflow:auto}
+.log li{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);border-bottom:1px dashed var(--line);padding-bottom:4px;font-variant-numeric:tabular-nums}
+.log li b{color:var(--fg)}
+.note{font-size:.78rem;color:var(--muted);line-height:1.5}
+.paused{color:var(--ok);font-weight:700}
+.hub{cursor:pointer;user-select:none;-webkit-user-select:none}
+.picker{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.picker button{background:transparent;color:var(--pink-soft);padding:8px 14px;font-size:.9rem;font-variant-numeric:tabular-nums}
+.picker button:hover{background:var(--line)}
+input[type=range]{width:100%;accent-color:var(--pink)}
+.paybtn{display:block;text-align:center;text-decoration:none;background:var(--pink);color:#010101;font-weight:800;border-radius:999px;padding:12px 18px;border:2px solid var(--pink)}
+.paybtn:focus-visible{outline:3px solid var(--pink);outline-offset:3px}
+#payUrl{word-break:break-all;user-select:all;-webkit-user-select:all;min-width:0;flex:1}
+@media (prefers-reduced-motion:reduce){.meter i{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1><a href="index.html" style="display:inline-block;font-family:var(--mono);font-size:.8rem;color:var(--pink-soft);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin-right:8px;vertical-align:middle">← games</a>MALICE <span>Tip Wheel</span></h1>
+    <div class="tag">cosplay fund</div>
+  </header>
+
+  <div class="wheelwrap">
+    <canvas id="wheel" width="800" height="800" aria-label="Tip wheel"></canvas>
+    <div class="pointer" aria-hidden="true"></div>
+    <div class="hub" id="hub" role="button" tabindex="0" aria-label="Choose your own amount" aria-controls="picker">tip<br>me ♡</div>
+  </div>
+
+  <section class="panel" id="picker" hidden aria-label="Choose your amount">
+    <span class="label">Pick your amount ♡</span>
+    <div class="picker" id="chips"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="bigTitle">
+    <div class="row"><label class="label" id="bigTitle" for="mult">Big tipper</label><span class="nums" id="multTxt">1×</span></div>
+    <input type="range" id="mult" min="1" max="3" step="0.5" value="1">
+    <p class="note" id="multNote">Normal mode. Slide right if you're feeling generous.</p>
+  </section>
+
+  <button class="spin" id="spinBtn">SPIN</button>
+  <div class="result" id="result" aria-live="polite">Go on, spin. The cosplay fund is waiting ♡</div>
+
+  <section class="panel" id="payPanel" hidden aria-labelledby="payTitle">
+    <div class="row"><span class="label" id="payTitle">Ready to tip</span><span class="nums" id="owedTxt">$0</span></div>
+    <a class="paybtn" id="payLink" href="#" target="_blank" rel="noopener">Tip $0 with PayPal</a>
+    <div class="row"><span class="note" id="payUrl"></span><button class="ghost" id="clearOwed" type="button">Not now</button></div>
+    <p class="note">Link not working? Tip on <a id="bizLink" href="#" target="_blank" rel="noopener" style="color:var(--pink-soft)">my PayPal page</a> and enter <span id="owedTxt2">$0</span> yourself.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="capTitle">
+    <div class="row">
+      <span class="label" id="capTitle">Your daily limit</span>
+      <label class="switch"><input type="checkbox" id="pause"> Pause me</label>
+    </div>
+    <div class="row">
+      <span class="nums" id="spentTxt">$0 of $100 today</span>
+      <span>$ <input type="number" id="cap" min="1" max="1000" step="1" value="100" aria-label="Daily limit in dollars"></span>
+    </div>
+    <div class="meter"><i id="meter"></i></div>
+    <p class="note">You set the limit. The wheel can never charge past it, and pausing stops all spins until you turn it back on. Pale ↻ slices add a small tip and spin again on their own; respins stop at your limit or when you pause.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="logTitle">
+    <div class="row">
+      <span class="label" id="logTitle">Today's tips</span>
+      <button class="ghost" id="reset">Reset day</button>
+    </div>
+    <ul class="log" id="log"><li><span>No spins yet</span></li></ul>
+  </section>
+
+  <p class="note">Tips go toward fabric, wigs, props and con trips. Thank you for supporting my work ♡</p>
+  <p class="note">Spinning is free and never charges you. You only tip if you choose to pay through PayPal.</p>
+</div>
+
+<script>
+(function(){
+  // ---- PayPal business account that receives tips ----
+  const PAYPAL_ID = "GCA6LB3DXBTAU"; // merchant account ID, keeps the email out of the page
+  const PAYPAL_BIZ = "https://paypal.biz/menheramalice";
+
+  // 12 slices; the 5 small ones (5/12, ~42% of the wheel) charge AND force a respin
+  const SEGMENTS = [
+    {label:"$5 ↻",   amt:5,  color:"#F0ECF0", text:"#010101", respin:true},
+    {label:"LUCKY",  amt:0,  color:"#161216", text:"#A98DAB"},
+    {label:"$4 ↻",   amt:4,  color:"#F0ECF0", text:"#010101", respin:true},
+    {label:"$8",     amt:8,  color:"#A98DAB", text:"#010101"},
+    {label:"$3 ↻",   amt:3,  color:"#F0ECF0", text:"#010101", respin:true},
+    {label:"$20",    amt:20, color:"#322837", text:"#F0ECF0"},
+    {label:"x2!!",   amt:"double", color:"#161216", text:"#A98DAB"},
+    {label:"$12",    amt:12, color:"#A98DAB", text:"#010101"},
+    {label:"$1 ↻",   amt:1,  color:"#F0ECF0", text:"#010101", respin:true},
+    {label:"$15",    amt:15, color:"#5A555E", text:"#F0ECF0"},
+    {label:"$6 ↻",   amt:6,  color:"#F0ECF0", text:"#010101", respin:true},
+    {label:"$25",    amt:25, color:"#322837", text:"#F0ECF0"}
+  ];
+  const LINES = {
+    0:  "Lucky. I'm feeling generous. Don't get used to it.",
+    1:  "One dollar? Bold. I'll allow it.",
+    low:"Cute. That's barely a wig clip, but okay ♡",
+    mid:"Hmph. Fabric money. Acceptable.",
+    high:"Finally, someone who gets it. The prop fund thanks you ♡",
+    double:"Double it. You heard the wheel.",
+    capped:"Your limit says stop. Lame, but fine.",
+    respin:"That's it? Spin again ♡"
+  };
+
+  const $ = id => document.getElementById(id);
+  const cv = $("wheel"), ctx = cv.getContext("2d");
+  const N = SEGMENTS.length, ARC = Math.PI*2/N;
+  let rot = 0, spinning = false;
+
+  const store = {
+    get(k,d){ try{ const v = localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
+    set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  };
+  let state = store.get("tipwheel", null);
+  // start a fresh day (keeping mult/cap) if the date changed, even with the tab left open
+  function rollDay(){
+    const today = new Date().toDateString();
+    if(state && state.day === today) return false;
+    state = {day:today, mult: state&&state.mult?state.mult:1, cap: state?state.cap:100, spent:0, last:0, paused:false, log:[], owed:0};
+    // sample spins so the first view shows how it works
+    if(!store.get("tipwheel_seen", false)){
+      state.log = [{t:"example", label:"$5", amt:5},{t:"example", label:"LUCKY", amt:0}];
+      state.spent = 5; state.last = 5;
+    }
+    return true;
+  }
+  rollDay();
+
+  if(!state.mult) state.mult = 1;
+  const amtOf = seg => Math.round(seg.amt * state.mult);
+  const labelOf = seg => (typeof seg.amt!=="number" || seg.amt===0) ? seg.label : "$"+amtOf(seg)+(seg.respin?" ↻":"");
+  const MULT_NOTES = {1:"Normal mode. Slide right if you're feeling generous.",1.5:"Ooh, look at you.",2:"Now we're talking.",2.5:"Showing off? I like it.",3:"Big tipper energy ♡"};
+
+  function draw(){
+    const r = cv.width/2;
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.save(); ctx.translate(r,r); ctx.rotate(rot);
+    for(let i=0;i<N;i++){
+      const a0 = i*ARC - Math.PI/2 - ARC/2;
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,r-10,a0,a0+ARC); ctx.closePath();
+      ctx.fillStyle = SEGMENTS[i].color; ctx.fill();
+      ctx.strokeStyle = "#010101"; ctx.lineWidth = 6; ctx.stroke();
+      ctx.save(); ctx.rotate(a0+ARC/2);
+      ctx.textAlign="right"; ctx.textBaseline="middle";
+      ctx.fillStyle = SEGMENTS[i].text;
+      ctx.font = "48px 'Dela Gothic One', 'Arial Black', sans-serif";
+      ctx.fillText(labelOf(SEGMENTS[i]), r-46, 0);
+      ctx.restore();
+    }
+    ctx.beginPath(); ctx.arc(0,0,r-10,0,Math.PI*2); ctx.lineWidth=10; ctx.strokeStyle="#A98DAB"; ctx.stroke();
+    ctx.restore();
+  }
+
+  function render(){
+    const cap = state.cap, spent = state.spent;
+    $("cap").value = cap;
+    $("mult").value = state.mult;
+    $("multTxt").textContent = state.mult+"×";
+    $("multNote").textContent = MULT_NOTES[state.mult] + (state.mult>1 ? " Bigger slices, same daily limit." : "");
+    $("mult").disabled = spinning;
+    $("pause").checked = state.paused;
+    $("spentTxt").textContent = `$${spent} of $${cap} today`;
+    $("meter").style.width = Math.min(100, spent/cap*100) + "%";
+    const out = spent >= cap;
+    $("spinBtn").disabled = spinning || state.paused || out;
+    $("spinBtn").textContent = state.paused ? "PAUSED" : out ? "LIMIT REACHED" : "SPIN";
+    const log = $("log"); log.innerHTML = "";
+    if(!state.log.length){ log.innerHTML = "<li><span>No spins yet</span></li>"; }
+    state.log.slice().reverse().forEach(e=>{
+      const li = document.createElement("li");
+      li.innerHTML = `<span>${e.t==="example"?"example":e.t} · ${e.label}</span><b>$${e.amt}</b>`;
+      log.appendChild(li);
+    });
+    const owed = state.owed||0;
+    $("payPanel").hidden = spinning || owed<=0;
+    if(owed>0){
+      const url = "https://www.paypal.com/cgi-bin/webscr?" + new URLSearchParams({cmd:"_xclick", business:PAYPAL_ID, amount:String(owed), currency_code:"USD", item_name:"Cosplay fund tip", no_shipping:"1"}).toString();
+      $("owedTxt").textContent = "$"+owed;
+      $("owedTxt2").textContent = "$"+owed;
+      $("payLink").href = url;
+      $("payLink").textContent = `Tip $${owed} with PayPal`;
+      $("payUrl").textContent = url;
+      $("clearOwed").textContent = state.paidClicked ? "Done" : "Not now";
+    }
+    store.set("tipwheel", state);
+  }
+
+  function settle(i, picked){
+    const seg = SEGMENTS[i];
+    let amt = seg.amt==="double" ? Math.max(1, state.last*2) : amtOf(seg);
+    let line;
+    const room = state.cap - state.spent;
+    let capped = false;
+    if(amt > room){ amt = room; capped = true; }
+    const respin = seg.respin && !picked && !capped && (state.spent + amt) < state.cap && !state.paused;
+    if(capped) line = LINES.capped;
+    else if(respin) line = LINES.respin;
+    else if(seg.amt==="double") line = LINES.double;
+    else if(amt===0) line = LINES[0];
+    else if(amt===1) line = LINES[1];
+    else if(amt<=5) line = LINES.low;
+    else if(amt<=15) line = LINES.mid;
+    else line = LINES.high;
+    state.spent += amt;
+    state.owed = (state.owed||0) + amt;
+    if(amt>0) state.last = amt;
+    const t = new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+    state.log.push({t, label: labelOf(seg), amt});
+    $("result").innerHTML = `<b>${amt===0?"$0":"$"+amt}</b>${line}`;
+    $("hub").innerHTML = amt===0 ? "free<br>♡" : "$"+amt;
+    return respin;
+  }
+
+  function spin(forced){
+    if(rollDay()){ $("hub").innerHTML = "tip<br>me ♡"; render(); }
+    if(spinning || state.paused || state.spent>=state.cap) return;
+    // they already opened PayPal for the old total; start a new one
+    if(state.paidClicked){ state.owed = 0; state.paidClicked = false; }
+    if(!store.get("tipwheel_seen", false)){
+      store.set("tipwheel_seen", true);
+      state.log = state.log.filter(e=>e.t!=="example"); state.spent = 0; state.last = 0;
+    }
+    spinning = true; render();
+    const target = Number.isInteger(forced) ? forced : Math.floor(Math.random()*N);
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // segment i is centered at angle i*ARC (from top); pointer at top -> rot = -i*ARC
+    const base = rot - (rot % (Math.PI*2));
+    const end = base + Math.PI*2*(reduce?1:6) + ((Math.PI*2 - target*ARC) % (Math.PI*2)) + (Math.random()-.5)*ARC*.6;
+    const start = rot, dur = reduce?400:4200, t0 = performance.now();
+    $("result").textContent = "Spinning…";
+    function step(now){
+      const p = Math.min(1,(now-t0)/dur);
+      const e = 1 - Math.pow(1-p, 4);
+      rot = start + (end-start)*e; draw();
+      if(p<1) requestAnimationFrame(step);
+      else {
+        spinning=false;
+        const again = settle(target, Number.isInteger(forced)); render();
+        if(again){ $("spinBtn").disabled = true; $("spinBtn").textContent = "RESPIN…"; setTimeout(spin, 1100); }
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  $("spinBtn").addEventListener("click", ()=>spin());
+  // keep the amount on screen after opening PayPal so the fallback still shows it; cleared on Done or next spin
+  $("payLink").addEventListener("click", ()=>{ state.paidClicked = true; $("result").textContent = "PayPal opened in a new tab. Thank you ♡"; render(); });
+  $("clearOwed").addEventListener("click", ()=>{ state.owed = 0; state.paidClicked = false; render(); });
+  // Hidden picker: double-tap or long-press the hub to choose your own amount
+  const chips = $("chips");
+  function buildChips(){
+    chips.innerHTML = "";
+    SEGMENTS.forEach((sg,i)=>{
+      if(sg.amt==="double") return;
+      const b = document.createElement("button");
+      b.type="button"; b.textContent = sg.amt===0 ? "$0" : "$"+amtOf(sg);
+      b.addEventListener("click", ()=>{ $("picker").hidden = true; spin(i); });
+      chips.appendChild(b);
+    });
+  }
+  buildChips();
+  $("mult").addEventListener("input", e=>{
+    state.mult = parseFloat(e.target.value) || 1;
+    buildChips(); draw(); render();
+  });
+  const togglePicker = ()=>{ $("picker").hidden = !$("picker").hidden; };
+  let pressT = null, lastTap = 0;
+  const hub = $("hub");
+  hub.addEventListener("pointerdown", ()=>{ pressT = setTimeout(()=>{ pressT=null; togglePicker(); }, 600); });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>hub.addEventListener(ev, ()=>{ if(pressT){ clearTimeout(pressT); pressT=null; } }));
+  hub.addEventListener("click", ()=>{ const n=Date.now(); if(n-lastTap<350){ togglePicker(); lastTap=0; } else lastTap=n; });
+  hub.addEventListener("keydown", e=>{ if(e.key==="Enter" || e.key===" "){ e.preventDefault(); togglePicker(); } });
+  $("pause").addEventListener("change", e=>{ state.paused = e.target.checked; $("result").textContent = state.paused ? "Paused. Turn it back on whenever you like." : "Welcome back ♡"; render(); });
+  $("cap").addEventListener("change", e=>{ const v = Math.max(1, Math.min(1000, parseInt(e.target.value)||1)); state.cap = v; render(); });
+  $("bizLink").href = PAYPAL_BIZ;
+  $("reset").addEventListener("click", ()=>{ state.spent=0; state.last=0; state.log=[]; state.owed=0; state.paidClicked=false; $("result").textContent="Fresh start. Spin away ♡"; $("hub").innerHTML="tip<br>me ♡"; render(); });
+
+  draw(); render();
+  if(document.fonts) document.fonts.ready.then(draw);
+})();
+</script>
+
+<script>
+(function(){
+  function send(){ try{ parent.postMessage({type:"tipgames-height", h:document.documentElement.scrollHeight}, "*"); }catch(e){} }
+  window.addEventListener("load", send);
+  window.addEventListener("resize", send);
+  if(window.ResizeObserver){ new ResizeObserver(send).observe(document.body); }
+  else setInterval(send, 1000);
+})();
+</script>
+</body>
+</html>

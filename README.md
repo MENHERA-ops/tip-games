@@ -5,6 +5,8 @@ MALICE arcade: a game-select lobby with two spin-to-tip games for the cosplay fu
 - `index.html` - lobby (pick a game)
 - `slots.html` - Hime-sama Slots (amount x multiplier, + respins)
 - `wheel.html` - Tip Wheel (copy of [tip-wheel](https://github.com/MENHERA-ops/tip-wheel))
+- `hand.html` - Expansion 01: Hime's Hand (3 cards + a charm, tip $ × mult)
+- `auction.html` - Expansion 02: Hime's Auction (piggies bid against each other)
 
 Live at https://menhera-ops.github.io/tip-games/ once GitHub Pages is enabled (Settings > Pages > Deploy from branch `main`, root).
 

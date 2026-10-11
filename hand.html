@@ -85,9 +85,9 @@ h1 .sub1{display:block;font-family:var(--f-display);font-weight:400;font-size:cl
   background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--felt),var(--purple) calc(var(--heat) * 22%)),#17111d 80%);display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:10px;position:relative;transition:background .6s}
 .felt .hint{font-family:var(--f-pixel);font-size:13px;color:var(--muted);text-align:center;align-self:center}
 .card{--w:clamp(70px,21vw,92px);width:var(--w);aspect-ratio:5/7;perspective:600px;position:relative;transition:transform .3s,opacity .4s,filter .3s}
-.card.dealt{animation:deal .45s cubic-bezier(.3,1.4,.5,1)}
+.card.dealt{animation:deal .6s cubic-bezier(.3,1.4,.5,1)}
 @keyframes deal{0%{transform:translate(0,-120px) rotate(-25deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}
-.card .inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.3,1.3,.5,1)}
+.card .inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,1.3,.5,1)}
 .card.flipped .inner{transform:rotateY(180deg)}
 .card .face{position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;box-shadow:0 6px 14px rgba(0,0,0,.45)}
 .card .back{background:repeating-linear-gradient(45deg,#5b437f 0 6px,#4d3870 6px 12px);border:3px solid var(--milk);display:grid;place-items:center}
@@ -320,7 +320,7 @@ footer a{color:var(--lilac)}
 
   // ---- helpers ----
   let heat=0;
-  const tempo=()=>reduce?.25:Math.max(.5,1-heat*.5);
+  const tempo=()=>reduce?.25:1.35*Math.max(.5,1-heat*.5);
   const sleep=ms=>new Promise(r=>setTimeout(r,ms*tempo()));
   function setHeat(h){heat=Math.max(0,Math.min(1,h));root.style.setProperty('--heat',heat.toFixed(2));}
   function shake(l){if(reduce||!l)return;cab.classList.remove('shake-1','shake-2','shake-3','shake-4');void cab.offsetWidth;cab.classList.add('shake-'+Math.min(4,l));}

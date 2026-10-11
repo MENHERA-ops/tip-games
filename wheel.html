@@ -302,8 +302,8 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     // segment i is centered at angle i*ARC (from top); pointer at top -> rot = -i*ARC
     const base = rot - (rot % (Math.PI*2));
-    const end = base + Math.PI*2*(reduce?1:6) + ((Math.PI*2 - target*ARC) % (Math.PI*2)) + (Math.random()-.5)*ARC*.6;
-    const start = rot, dur = reduce?400:4200, t0 = performance.now();
+    const end = base + Math.PI*2*(reduce?1:5) + ((Math.PI*2 - target*ARC) % (Math.PI*2)) + (Math.random()-.5)*ARC*.6;
+    const start = rot, dur = reduce?400:5600, t0 = performance.now();
     $("result").textContent = "Spinning…";
     hilite = -1; wrap.classList.add("spinning");
     let lastSeg = segAt(rot);

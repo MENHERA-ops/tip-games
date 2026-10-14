@@ -289,7 +289,7 @@ const LOTS=[
   {nm:'being her favorite (for 1 min)', f:2.0,w:1}
 ];
 // PACE < 1 plays the auction slower than real time without changing its outcome
-const PACE=.75;
+const PACE=.6;
 const START_CLOCK=12, SOFT_CLOSE=4.5, CAP=500, DT=.1, BUDGET_SCALE=.74, RATE_SCALE=.5;
 function gauss(rng){let u=0,v=0;while(!u)u=rng();while(!v)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 function pickW(arr,rng){const s=arr.reduce((a,x)=>a+x.w,0);let r=rng()*s;for(const x of arr){r-=x.w;if(r<0)return x;}return arr[0];}
@@ -532,7 +532,7 @@ function step(a){
   }
   function countUp(to){
     if(reduce){amtEl.textContent='$'+to;return;}
-    const t0=performance.now(),d=Math.min(1400,500+to*4);
+    const t0=performance.now(),d=Math.min(2200,800+to*6);
     (function s(t){const p=Math.max(0,Math.min(1,(t-t0)/d));amtEl.textContent='$'+Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(s);})(t0);
     amtEl.classList.remove('amtbump');void amtEl.offsetWidth;amtEl.classList.add('amtbump');
   }

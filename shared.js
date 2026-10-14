@@ -15,7 +15,7 @@
     const sum = () => results.reduce((a, b) => a + b, 0);
     function paint(){
       if(!btn) return;
-      if(running){
+      if(running && total > 1){
         btn.textContent = (results.length + 1) + "/" + total + (stopping ? " · stopping" : " · stop");
         btn.setAttribute("aria-label", "round " + (results.length + 1) + " of " + total + ", tap to stop after this one");
       }else{

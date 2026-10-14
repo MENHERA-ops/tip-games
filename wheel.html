@@ -42,6 +42,12 @@ button:active{transform:scale(.97)}
 .spin{background:var(--pink);color:#010101;font-size:1.15rem;padding:14px 20px;width:100%;font-family:var(--display);font-weight:400;letter-spacing:.06em}
 .spin:disabled{background:var(--line);border-color:var(--line);color:var(--muted);cursor:not-allowed}
 .ghost{background:transparent;color:var(--pink-soft);padding:8px 14px;font-size:.85rem}
+.spinrow{display:flex;gap:10px;align-items:stretch}
+.spinrow .spin{flex:1;width:auto}
+.ghost.multi{border-color:var(--line);color:var(--muted);font-family:var(--mono);font-weight:400;font-size:.78rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ghost.multi.on{border-color:var(--pink);color:var(--pink-soft)}
+.tally{margin:-10px 0 0;text-align:center;font-family:var(--mono);font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tally b{color:var(--pink-soft);font-weight:400}
 .result{min-height:3.4em;text-align:center;font-size:1.05rem}
 .result b{font-family:var(--display);font-weight:400;color:var(--pink);font-size:1.6rem;display:block}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
@@ -112,8 +118,12 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     <p class="note" id="multNote">Normal mode. Slide right if you're feeling generous.</p>
   </section>
 
-  <button class="spin" id="spinBtn">SPIN</button>
+  <div class="spinrow">
+    <button class="spin" id="spinBtn">SPIN</button>
+    <button class="ghost multi" id="multiBtn" type="button" title="Spin several times in a row, totalled at the end">1 spin</button>
+  </div>
   <div class="result" id="result" aria-live="polite">Go on, spin. The cosplay fund is waiting ♡</div>
+  <p class="tally" id="tally" aria-live="polite" hidden></p>
 
   <section class="panel" id="payPanel" hidden aria-labelledby="payTitle">
     <div class="row"><span class="label" id="payTitle">Ready to tip</span><span class="nums" id="owedTxt">$0</span></div>
@@ -175,6 +185,8 @@ input[type=range]{width:100%;accent-color:var(--pink)}
   const cv = $("wheel"), ctx = cv.getContext("2d");
   const N = SEGMENTS.length, ARC = Math.PI*2/N;
   let rot = 0, spinning = false, respinPending = false, hilite = -1, hiliteA = 0;
+  // a spin plus its automatic respins counts as one round for multi-spin
+  let inChain = false, chainAmt = 0, multi = null;
 
   const store = {
     get(k,d){ try{ const v = localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
@@ -242,7 +254,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     $("mult").disabled = spinning;
     $("pause").checked = state.paused;
     $("spentTxt").textContent = `$${spent} today`;
-    $("spinBtn").disabled = spinning || respinPending || state.paused;
+    $("spinBtn").disabled = spinning || respinPending || state.paused || (multi && multi.running);
     $("spinBtn").textContent = state.paused ? "PAUSED" : "SPIN";
     const log = $("log"); log.innerHTML = "";
     if(!state.log.length){ log.innerHTML = "<li><span>No spins yet</span></li>"; }
@@ -277,7 +289,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     else if(amt<=5) line = LINES.low;
     else if(amt<=15) line = LINES.mid;
     else line = LINES.high;
-    state.spent += amt;
+    state.spent += amt; chainAmt += amt;
     state.owed = (state.owed||0) + amt;
     if(amt>0 && seg.amt!=="double") state.last = amt;
     const t = new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
@@ -290,26 +302,27 @@ input[type=range]{width:100%;accent-color:var(--pink)}
 
   function spin(forced){
     if(rollDay()){ $("hub").innerHTML = "tip<br>me ♡"; render(); }
-    if(spinning || respinPending || state.paused) return;
+    if(spinning || respinPending || state.paused) return false;
     // they already opened PayPal for the old total; start a new one
     if(state.paidClicked){ state.owed = 0; state.paidClicked = false; }
     if(!store.get("tipwheel_seen", false)){
       store.set("tipwheel_seen", true);
       state.log = state.log.filter(e=>e.t!=="example"); state.spent = 0; state.last = 0;
     }
+    if(!inChain) chainAmt = 0;
     spinning = true; render();
     const target = Number.isInteger(forced) ? forced : Math.floor(Math.random()*N);
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     // segment i is centered at angle i*ARC (from top); pointer at top -> rot = -i*ARC
     const base = rot - (rot % (Math.PI*2));
     const end = base + Math.PI*2*(reduce?1:5) + ((Math.PI*2 - target*ARC) % (Math.PI*2)) + (Math.random()-.5)*ARC*.6;
-    const start = rot, dur = reduce?400:5600, t0 = performance.now();
+    const start = rot, dur = reduce?400:8000, t0 = performance.now();
     $("result").textContent = "Spinning…";
     hilite = -1; wrap.classList.add("spinning");
     let lastSeg = segAt(rot);
     function step(now){
       const p = Math.min(1,(now-t0)/dur);
-      const e = 1 - Math.pow(1-p, 4);
+      const e = 1 - Math.pow(1-p, 5);
       rot = start + (end-start)*e; draw();
       const sg = segAt(rot);
       if(sg!==lastSeg){ lastSeg = sg; tick(); }
@@ -317,7 +330,9 @@ input[type=range]{width:100%;accent-color:var(--pink)}
       else {
         spinning=false; wrap.classList.remove("spinning");
         const again = settle(target, Number.isInteger(forced)); render();
-        if(again){ respinPending = true; render(); $("spinBtn").textContent = "RESPIN…"; setTimeout(()=>{ respinPending = false; spin(); render(); }, 1100); }
+        inChain = again;
+        if(!again) multi.done(chainAmt);
+        if(again){ respinPending = true; render(); $("spinBtn").textContent = "RESPIN…"; setTimeout(()=>{ respinPending = false; spin(); render(); }, 1600); }
       }
     }
     requestAnimationFrame(step);
@@ -404,7 +419,35 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     if(big){ restart(wrap, "shake"); setTimeout(()=>{ ring(); burst(60, 13, ["heart","confetti"]); }, 280); }
   }
 
-  $("spinBtn").addEventListener("click", ()=>spin());
+  // multi-spin: several spins back to back, totalled at the end
+  const tallyEl = $("tally"), multiBtn = $("multiBtn");
+  const tallyHTML = res => TipGames.tallyText(res).replace(/= (\$\d+)$/, "= <b>$1</b>");
+  multi = TipGames.multiRun({
+    button: multiBtn, noun: ["spin","spins"],
+    gap: matchMedia("(prefers-reduced-motion: reduce)").matches ? 600 : 2200,
+    play: () => spin(),
+    onProgress: (res, n) => {
+      multiBtn.classList.toggle("on", multi.running);
+      if(n < 2){ tallyEl.hidden = true; return; }
+      tallyEl.hidden = false; tallyEl.innerHTML = "so far: " + tallyHTML(res);
+    },
+    onTotal: (sum, res) => {
+      multiBtn.classList.remove("on"); render();
+      setTimeout(()=>{
+        tallyEl.hidden = false; tallyEl.innerHTML = res.length + " spins: " + tallyHTML(res);
+        $("result").innerHTML = `<b>$${sum} total</b>${res.length} spins, all added up ♡`;
+        const b = $("result").querySelector("b"); if(b) restart(b, "flash");
+        if(!reduceFx() && sum > 0){ ring(); burst(Math.min(160, 40 + sum*2), 13, ["heart","star","confetti"]); }
+      }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1400);
+    }
+  });
+  function play(){
+    if(spinning || respinPending || state.paused || multi.running) return;
+    tallyEl.hidden = true;
+    multi.start();
+    multiBtn.classList.toggle("on", multi.running && multi.count > 1);
+  }
+  $("spinBtn").addEventListener("click", play);
   // keep the amount on screen after opening PayPal so the fallback still shows it; cleared on Done or next spin
   $("payLink").addEventListener("click", ()=>{ state.paidClicked = true; $("result").textContent = "PayPal opened in a new tab. Thank you ♡"; render(); });
   $("clearOwed").addEventListener("click", ()=>{ state.owed = 0; state.paidClicked = false; render(); });
@@ -416,7 +459,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
       if(sg.amt==="double") return;
       const b = document.createElement("button");
       b.type="button"; b.textContent = sg.amt===0 ? "$0" : "$"+amtOf(sg);
-      b.addEventListener("click", ()=>{ $("picker").hidden = true; spin(i); });
+      b.addEventListener("click", ()=>{ if(multi.running) return; $("picker").hidden = true; spin(i); });
       chips.appendChild(b);
     });
   }

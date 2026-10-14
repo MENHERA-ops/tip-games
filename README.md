@@ -12,6 +12,8 @@ Live at https://menhera-ops.github.io/tip-games/ once GitHub Pages is enabled (S
 
 To embed in Carrd: add an Embed element (Code, Inline) and paste the contents of `carrd-embed.html`. The iframe resizes itself to fit whichever page is open.
 
+Multi-play: the small counter button next to each game's main button cycles 1 / 3 / 5 / 10 rounds. Those rounds play back to back and the suggested tip becomes their total, with the breakdown shown under it. Tap the counter mid-run to stop after the current round. The logic lives in `TipGames.multiRun` in `shared.js`.
+
 To change the PayPal account, edit `PAYPAL_ID` in `shared.js`.
 
 Tests: `node --test`

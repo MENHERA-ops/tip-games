@@ -331,7 +331,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
         spinning=false; wrap.classList.remove("spinning");
         const again = settle(target, Number.isInteger(forced)); render();
         inChain = again;
-        if(!again) multi.done(chainAmt);
+        if(!again){ multi.done(chainAmt); render(); }
         if(again){ respinPending = true; render(); $("spinBtn").textContent = "RESPIN…"; setTimeout(()=>{ respinPending = false; spin(); render(); }, 1600); }
       }
     }
